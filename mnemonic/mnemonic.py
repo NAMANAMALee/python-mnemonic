@@ -29,15 +29,15 @@ from typing import AnyStr, List, Sequence, TypeVar, Union
 import unicodedata
 
 _T = TypeVar("_T")
-PBKDF2_ROUNDS = 2048
+PBKDF2_ROUNDS = 2048  //应用一个伪随机函数以导出密钥
 
 
-class ConfigurationError(Exception):
+class ConfigurationError(Exception):  //特殊情况：配置错误，则pass
     pass
 
 
 # From <https://stackoverflow.com/questions/212358/binary-search-bisection-in-python/2233940#2233940>
-def binary_search(
+def binary_search(  //二分搜索
     a: Sequence[_T],
     x: _T,
     lo: int = 0,
@@ -49,7 +49,7 @@ def binary_search(
 
 
 # Refactored code segments from <https://github.com/keis/base58>
-def b58encode(v: bytes) -> str:
+def b58encode(v: bytes) -> str:  //b58编码
     alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 
     p, acc = 1, 0
@@ -66,7 +66,7 @@ def b58encode(v: bytes) -> str:
 
 class Mnemonic(object):
     def __init__(self, language: str):
-        self.radix = 2048
+        self.radix = 2048  //基数
         with open(
             "%s/%s.txt" % (self._get_directory(), language), "r", encoding="utf-8"
         ) as f:
@@ -101,8 +101,8 @@ class Mnemonic(object):
         return unicodedata.normalize("NFKD", utxt)
 
     @classmethod
-    def detect_language(cls, code: str) -> str:
-        code = cls.normalize_string(code)
+    def detect_language(cls, code: str) -> str:  //检测
+        code = cls.normalize_string(code)  //归一化
         first = code.split(" ")[0]
         languages = cls.list_languages()
 
@@ -119,11 +119,11 @@ class Mnemonic(object):
                 "Strength should be one of the following [128, 160, 192, 224, 256], but it is not (%d)."
                 % strength
             )
-        return self.to_mnemonic(os.urandom(strength // 8))
+        return self.to_mnemonic(os.urandom(strength // 8))  //助记词
 
     # Adapted from <http://tinyurl.com/oxmn476>
-    def to_entropy(self, words: Union[List[str], str]) -> bytearray:
-        if not isinstance(words, list):
+    def to_entropy(self, words: Union[List[str], str]) -> bytearray:  //熵->生成一个字节数组
+        if not isinstance(words, list):  //isinstance：判断一个对象是否是一个已知的类型，判断单词是否在列表中
             words = words.split(" ")
         if len(words) not in [12, 15, 18, 21, 24]:
             raise ValueError(
@@ -132,7 +132,7 @@ class Mnemonic(object):
             )
         # Look up all the words in the list and construct the
         # concatenation of the original entropy and the checksum.
-        concatLenBits = len(words) * 11
+        concatLenBits = len(words) * 11  //concat：连接
         concatBits = [False] * concatLenBits
         wordindex = 0
         if self.detect_language(" ".join(words)) == "english":
@@ -140,7 +140,7 @@ class Mnemonic(object):
         else:
             use_binary_search = False
         for word in words:
-            # Find the words index in the wordlist
+            # Find the words index in the wordlist  在单词表中找到单词索引
             ndx = (
                 binary_search(self.wordlist, word)
                 if use_binary_search
@@ -231,9 +231,9 @@ class Mnemonic(object):
         return " ".join(map(self.expand_word, mnemonic.split(" ")))
 
     @classmethod
-    def to_seed(cls, mnemonic: str, passphrase: str = "") -> bytes:
-        mnemonic = cls.normalize_string(mnemonic)
-        passphrase = cls.normalize_string(passphrase)
+    def to_seed(cls, mnemonic: str, passphrase: str = "") -> bytes:  //生成种子
+        mnemonic = cls.normalize_string(mnemonic)  //归一化
+        passphrase = cls.normalize_string(passphrase)  
         passphrase = "mnemonic" + passphrase
         mnemonic_bytes = mnemonic.encode("utf-8")
         passphrase_bytes = passphrase.encode("utf-8")
@@ -258,14 +258,14 @@ class Mnemonic(object):
         xprv += seed[32:]  # Chain code
         xprv += b"\x00" + seed[:32]  # Master key
 
-        # Double hash using SHA256
+        # Double hash using SHA256  使用两次sha256
         hashed_xprv = hashlib.sha256(xprv).digest()
         hashed_xprv = hashlib.sha256(hashed_xprv).digest()
 
         # Append 4 bytes of checksum
-        xprv += hashed_xprv[:4]
+        xprv += hashed_xprv[:4]  //
 
-        # Return base58
+        # Return base58  base58生成钱包地址
         return b58encode(xprv)
 
 
@@ -275,7 +275,7 @@ def main() -> None:
     if len(sys.argv) > 1:
         hex_data = sys.argv[1]
     else:
-        hex_data = sys.stdin.readline().strip()
+        hex_data = sys.stdin.readline().strip()  //stdin:标准输入
     data = bytes.fromhex(hex_data)
     m = Mnemonic("english")
     print(m.to_mnemonic(data))
